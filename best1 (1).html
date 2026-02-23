@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task managment Planning</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+body {
+    min-height: 100vh;
+    background-color:blue;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.container {
+    width: 100%;
+    max-width: 500px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(15px);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    color:skyblue;
+}
+
+
+h1, h2 {
+    font-weight: 700;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+}
+
+
+button {
+    border: none;
+    padding: 8px 15px;
+    margin: 5px 5px 10px 0;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+
+button:hover {
+    background: #ffffff;
+    color: #333;
+    transform: translateY(-2px);
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+}
+
+input:focus, select:focus, textarea:focus {
+    box-shadow: 0 0 5px #fff;
+}
+
+.add-btn {
+    width: 100%;
+    background: #ffffff;
+    color: #764ba2;
+    font-weight: 600;
+    padding: 12px;
+    border-radius: 30px;
+    transition: 0.3s;
+}
+
+.add-btn:hover {
+    background: #f1f1f1;
+    transform: scale(1.03);
+}
+</style>
+
+    <div class="container">
+<nav class="navbar">
+<div class="navbar-content">
+<h1 class="logo">📋 Task Planning</h1>
+<div class="nav-actions">
+<span id="userName" class="user-name"></span>
+<button id="logoutBtn" class="btn btn-logout>Logout</button>
+</div>
+</div>
+</nav>
+
+-
+<main class="main-content">
+
+<aside class="sidebar">
+<div class="sidebar-section">
+<h2>Filters</h2>
+<button class="filter-btn" data-filter="all tasks">
+📌 All Tasks
+</button>
+<button class="filter-btn" data-filter="todo">
+📝 To Do
+</button>
+<button class="filter-btn" data-filter="in-progress">
+⚙️ In Progress
+</button>
+<button class="filter-btn" data-filter="completed">
+✅ Completed
+</button>
+</div>
+<div class="sidebar-section">
+<h2>Priority</h2>
+<button class="priority-filter" data-priority="all">All</button>
+<button class="priority-filter" data-priority="high">🔴 High</button>
+<button class="priority-filter" data-priority="medium">🟡 Medium</button>
+<button class="priority-filter" data-priority="low">🟢 Low</button>
+</div>
+</aside>
+
+<section class="tasks-section">
+
+<div class="add-task-form">
+<h2>Add New Task</h2>
+<form id="taskForm">
+<div class="form-row">
+<div class="form-group">
+<label for="taskTitle">Task Title *</label>
+<input type="text" id="taskTitle" placeholder="Enter task title" required>
+</div>
+<div class="form-group">
+<label for="taskPriority">Priority *</label>
+<select id="taskPriority" required>
+
+<option value="medium" selected>Medium</option>
+<option value="high">High</option>
+<option value="low">Low</option>
+
+</select>
+</div>
+</div>
+
+<div class="form-row">
+<div class="form-group">
+<label for="taskDescription">Description</labe>
+<textarea id="taskDescription" placehold="Enter task description" rows="3">
+</textarea>
+</div>
+</div>
+
+<div class="form-row">
+<div class="form-group">
+<label for="taskDueDate">Due Date</label>
+<input type="date" id="taskDueDate">
+</div>
+<div class="form-group">
+<label for="taskStatus">Status</label>
+<select id="taskStatus">
+<option value="todo">To Do</option>
+<option value="in-progress">In Progress</optio>
+<option value="completed">Completed</option>
+</select>
+ </div> </div>
+
+<button type="submit" class="btn btn-primary">Add Task</button>
+</form>
+</div>
+
+
+<div class="tasks-list-container">
+<h2>Your Tasks</h2>
+<div id="tasksList" class="tasks-list">
+</div>
+</div>
+<div id="emptyState" class="empty-state" style="display: none;">
+<p>No tasks found. Create one to get started! 🚀</p>
+</div>
+</section>
+</main>
+</div>
+
+
+<div id="editModal" class="modal" style="display: none;">
+<div class="modal-content">
+<span class="close">&times;</span>
+<h2>Edit Task</h2>
+<form id="editForm">
+<input type="hidden" id="editTaskId">
+
+<div class="form-group">
+<label for="editTaskTitle">Task Title</label>
+<input type="text" id="editTaskTitle" required>
+</div>
+
+<div class="form-group">
+<label for="editTaskDescription">Description</label>
+<textarea id="editTaskDescription" rows="3"></textarea>
+</div>
+
+<div class="form-row">
+<div class="form-group">
+<label for="editTaskPriority">Priority</label>
+<select id="editTaskPriority">
+<option value="low">Low</option>
+<option value="medium">Medium</option>
+<option value="high">High</option>
+</select>
+</div>
+<div class="form-group">
+<label for="editTaskStatus">Status</label>
+<select id="editTaskStatus">
+<option value="todo">To Do</option>
+<option value="in-progress">In Progress</option>
+<option value="completed">Completed</option>
+</select>
+</div>
+</div>
+
+<div class="form-group">
+<label for="editTaskDueDate">Due Date</label>
+<input type="date" id="editTaskDueDate">
+</div>
+
+<div class="form-actions">
+<button type="submit" class="btn btn-primary">Save Changes</button>
+<button type="button" class="btn btn-secondary" id="cancelEdit">Cancel</button>
+</div>
+</form>
+</div>
+</div>
+
+
+<div id="notification" class="notification" style="display: none;"></div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
