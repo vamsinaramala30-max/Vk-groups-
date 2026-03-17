@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FamPay Ultra</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins}
+
+body{
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.app{
+width:360px;
+height:650px;
+background:#0f172a;
+border-radius:30px;
+overflow:hidden;
+position:relative;
+color:white;
+box-shadow:0 0 50px rgba(0,0,0,0.6);
+}
+
+/* Screen System */
+.screen{
+position:absolute;
+width:100%;
+height:100%;
+padding:25px;
+transition:0.5s;
+}
+
+.hidden{transform:translateX(100%)}
+.active{transform:translateX(0)}
+
+/* Inputs */
+input{
+width:100%;
+padding:12px;
+border-radius:10px;
+border:none;
+margin-bottom:10px;
+}
+
+button{
+width:100%;
+padding:10px;
+border:none;
+border-radius:10px;
+background:#00cec9;
+margin:5px 0;
+cursor:pointer;
+font-weight:600;
+}
+
+.timer{font-size:13px;color:#00cec9;margin-top:5px}
+
+/* Dashboard */
+.card{
+background:linear-gradient(135deg,#6c5ce7,#00cec9);
+padding:20px;
+border-radius:20px;
+margin-bottom:20px;
+}
+
+.balance{font-size:24px;font-weight:600}
+
+.tx{
+background:#1f2937;
+padding:10px;
+border-radius:10px;
+margin-bottom:10px;
+display:flex;
+justify-content:space-between;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- EMAIL VERIFICATION SCREEN -->
+<div class="screen active" id="verifyScreen">
+<h2>Email Verification</h2>
+
+<input type="email" id="email" placeholder="Enter Email">
+<button onclick="sendOTP()">Send OTP</button>
+
+<input type="text" id="otpInput" placeholder="Enter OTP">
+<button onclick="verifyOTP()">Verify OTP</button>
+
+<div class="timer" id="timer"></div>
+</div>
+
+<!-- DASHBOARD SCREEN -->
+<div class="screen hidden" id="dashboard">
+<h2>FamPay 🚀</h2>
+
+<button onclick="logout()">🔐 Logout</button>
+
+<div class="card">
+<p>Balance</p>
+<div class="balance" id="balance"></div>
+<p>UPI: <span id="upi"></span></p>
+</div>
+
+<button onclick="addMoney()">Add ₹500</button>
+<button onclick="sendMoney()">Send ₹300</button>
+<button onclick="downloadPDF()">Download PDF</button>
+
+<h3>Transactions</h3>
+<div id="transactions"></div>
+
+<h3>Expense Graph</h3>
+<canvas id="chart"></canvas>
+</div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+<script>
+// ✅ Initialize EmailJS (PUT YOUR PUBLIC KEY)
+emailjs.init("eJlKDs_VBM9rv2WZa");
+
+let generatedOTP = "";
+let timerInterval;
+
+let balance = localStorage.getItem("balance")
+  ? parseInt(localStorage.getItem("balance"))
+  : 1000;
+
+let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+
+if (!localStorage.getItem("upi")) {
+  let random = Math.floor(Math.random() * 9999);
+  localStorage.setItem("upi", "vamsi" + random + "@fam");
+}
+
+if (localStorage.getItem("loggedIn") === "true") {
+  goToDashboard();
+}
+
+// ✅ SEND OTP
+function sendOTP() {
+  let email = document.getElementById("email").value.trim();
+  if (email === "") {
+    alert("Enter email");
+    return;
+  }
+
+  generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+
+  emailjs
+    .send("service_8mxznm6", "template_ogispul", {
+      to_email: email,
+      otp: generatedOTP,
+    })
+    .then(() => {
+      alert("OTP sent to your email");
+      startTimer();
+    })
+    .catch((error) => {
+      console.log(error);
+      alert("Email sending failed. Check EmailJS setup.");
+    });
+}
+
+// ✅ TIMER
+function startTimer() {
+  let time = 60;
+  document.getElementById("timer").innerText =
+    "OTP expires in 60 seconds";
+
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    time--;
+    document.getElementById("timer").innerText =
+      "OTP expires in " + time + " seconds";
+
+    if (time <= 0) {
+      clearInterval(timerInterval);
+      generatedOTP = "";
+      document.getElementById("timer").innerText =
+        "OTP Expired";
+    }
+  }, 1000);
+}
+
+// ✅ VERIFY OTP
+function verifyOTP() {
+  let input = document.getElementById("otpInput").value.trim();
+
+  if (!generatedOTP) {
+    alert("OTP expired");
+    return;
+  }
+
+  if (input === generatedOTP) {
+    localStorage.setItem("loggedIn", "true");
+    goToDashboard();
+  } else {
+    alert("Invalid OTP");
+  }
+}
+
+function goToDashboard() {
+  document.getElementById("verifyScreen").classList.remove("active");
+  document.getElementById("verifyScreen").classList.add("hidden");
+
+  document.getElementById("dashboard").classList.remove("hidden");
+  document.getElementById("dashboard").classList.add("active");
+
+  updateUI();
+}
+
+function updateUI() {
+  document.getElementById("balance").innerText = "₹ " + balance;
+  document.getElementById("upi").innerText =
+    localStorage.getItem("upi");
+
+  let list = document.getElementById("transactions");
+  list.innerHTML = "";
+
+  let income = 0,
+    expense = 0;
+
+  transactions.forEach((tx) => {
+    let div = document.createElement("div");
+    div.className = "tx";
+
+    div.innerHTML = `
+      <span>${tx.text}</span>
+      <span style="color:${
+        tx.type === "credit" ? "#00ffae" : "#ff6b6b"
+      }">
+      ${tx.type === "credit" ? "+" : "-"}₹${tx.amount}
+      </span>
+    `;
+
+    list.appendChild(div);
+
+    if (tx.type === "credit") income += tx.amount;
+    else expense += tx.amount;
+  });
+
+  updateChart(income, expense);
+}
+
+function save() {
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("transactions", JSON.stringify(transactions));
+}
+
+function addMoney() {
+  balance += 500;
+  transactions.unshift({
+    text: "Added Money",
+    amount: 500,
+    type: "credit",
+  });
+  save();
+  updateUI();
+}
+
+function sendMoney() {
+  if (balance >= 300) {
+    balance -= 300;
+    transactions.unshift({
+      text: "Sent Money",
+      amount: 300,
+      type: "debit",
+    });
+    save();
+    updateUI();
+  } else {
+    alert("Insufficient Balance");
+  }
+}
+
+function logout() {
+  localStorage.clear();
+  location.reload();
+}
+
+function toggleTheme() {
+  document.body.classList.toggle("light");
+}
+
+let chart;
+function updateChart(income, expense) {
+  if (chart) chart.destroy();
+
+  chart = new Chart(document.getElementById("chart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Income", "Expense"],
+      datasets: [
+        {
+          data: [income, expense],
+          backgroundColor: ["#00ffae", "#ff6b6b"],
+        },
+      ],
+    },
+  });
+}
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  let doc = new jsPDF();
+
+  doc.text("Transaction History", 20, 20);
+
+  let y = 30;
+  transactions.forEach((tx) => {
+    doc.text(
+      `${tx.text} ${
+        tx.type === "credit" ? "+" : "-"
+      }₹${tx.amount}`,
+      20,
+      y
+    );
+    y += 10;
+  });
+
+  doc.save("transactions.pdf");
+}
+</script>
+
+</body>
+</html>
